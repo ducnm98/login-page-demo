@@ -2,7 +2,6 @@ var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
-var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var bcrypt = require('bcryptjs');
 var db = require('./config/db');
@@ -10,7 +9,10 @@ var Passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var flash = require('connect-flash');
 var mongoose = require('mongoose');
-
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+var session = require('express-session');
+var config = require('config');
 
 var app = express();
 
@@ -22,32 +24,55 @@ app.set('view engine', 'ejs');
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(Passport.initialize());
 app.use(Passport.session());
 
+app.use(session({
+	secret: 'mysecret',
+	cookie: {
+		maxAge: 1000*60*60*24 // 24 tiếng
+	}
+}));
+
 var index = require('./routes/index');
 var users = require('./routes/users');
 var nextPage = require('./routes/nextPage');
+var verify = require('./routes/verify');
 
 app.use('/', index);
 app.use('/users', users);
 app.use('/nextPage', nextPage);
+app.use('/verify', verify);
 
 app.route('/login')
 	.get(function (req, res) {
-    console.log("abc");
-		res.render('login')
+		res.render('login', {mess: ''})
 	})
 	.post(Passport.authenticate('local', {
-		failureRedirect: '/error',
-		successRedirect: '/nextPage',
+		failureRedirect: '/login/error',
+		successRedirect: '/nextPage/',
 		failureFlash: true}), (req, res) => {
-			res.redirect('/nextPage');
-	});
+			res.redirect('/nextPage', {mess: req.body.username});
+});
+
+app.route('/login/:mess')
+	.get(function (req, res) {
+		if (req.params.mess == 'error')
+			res.render('login', {mess: 'Lỗi đăng nhập, sai tài khoản hoặc mật khẩu!'})
+		else res.render('login', {mess: ''})
+	})
+	.post(Passport.authenticate('local', {
+		failureRedirect: '/login/err',
+		successRedirect: '/nextPage/',
+		failureFlash: true}), (req, res) => {
+			res.redirect('/nextPage', {mess: req.body.username});
+});
 
 
 
@@ -73,7 +98,7 @@ function ensureAuthenticated (req, res, next) {
 	if(req.isAuthenticated()) {
 		return next();
 	} else {
-		res.redirect('/');
+		res.redirect('/login');
 	};
 };
 
@@ -84,23 +109,6 @@ app.use((req, res, next) => {
 	res.locals.user = req.user || null;
 	next();
 });
-
-
-
-
-
-// app.route('/:mess')
-//   .get(function (req, res) {
-//   	if (req.params.mess == 'error')
-//   		res.render('login', {mess: 'Lỗi đăng nhập, sai tài khoản hoặc mật khẩu!'})
-//   	else res.render('login', {mess: ''})
-//   })
-//   .post(Passport.authenticate('local', {
-//   	failureRedirect: '/error',
-//   	successRedirect: '/',
-//   	failureFlash: true}), (req, res) => {
-//   		res.redirect('/');
-// });
 
 app.get('/logout', (req, res) => {
 	req.logout();
