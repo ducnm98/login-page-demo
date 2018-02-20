@@ -126,9 +126,16 @@ Passport.use(new LocalStrategy (
 				bcrypt.compare(password, userDoc.password, function(err, isMatch){
 					if(err) throw err;
 					if (isMatch){
-						userDoc.password=null
-						userDoc.email=null
-						return done(null, userDoc);
+						userDoc.password=null;
+						userDoc.email=null;
+						let insert = {
+							username: userDoc.username,
+							dateLogin: new Date()
+						}
+						mongoose.model('historyLogin').create(insert, function (err, result) {
+							if (err) throw err;
+							return done(null, userDoc);
+						})
 					}
 					return done(null, false);
 				});

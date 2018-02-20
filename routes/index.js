@@ -4,6 +4,8 @@ var bcrypt = require('bcryptjs');
 var mongoose = require('mongoose');
 var Passport = require('passport');
 var randomstring = require('randomstring');
+var ejs = require('ejs');
+var sendEmail = require('./../api/sendEmail');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -51,15 +53,26 @@ router.post('/', (req, res, next) => {
       if (result) {
         let fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
         let randoms = randomstring.generate(50);
-        let textLink = fullUrl '/verify/resetPassword' + '/' + result.username +'/' + randoms;
+        let textLink = fullUrl + 'verify/resetPassword' + '/' + result.username +'/' + randoms;
         let query = {
           username: result.username,
           email: result.email,
-          dateRequired: new Date();
+          dateRequired: new Date(),
           randomeCode: randoms
         }
-        mongoose.model('forgetpass').create(query).exec(function (err, result1) {
+        mongoose.model('forgetpass').create(query, function (err, result1) {
           if (err) throw err;
+          ejs.renderFile(__dirname + "/email_template/resetPassword.ejs", {
+            name: result.username,
+            action_url: fullUrl,
+            reset_url: textLink,
+          }, function (err, html) {
+            if (err) throw err;
+            let temp = randomstring.generate(3);
+            let subject = "[" + temp + "]" + "- Xác nhận khôi phục mật khẩu";
+            sendEmail.Send(result1.email, subject, html);
+            res.render('nextPage', {mess: 'Gửi thành công'});
+          })
 
         })
       }
