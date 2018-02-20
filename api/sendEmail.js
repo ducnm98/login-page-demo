@@ -12,8 +12,8 @@ module.exports = {
       SMTPAuth: true,
       SMTPSecure: 'tls',
       auth: {
-        user: "hsvbot@gmail.com",
-        pass: "ritwjjtrzuickikb"
+        user: "**Write your username**"
+        pass: "**Write you password**"
       }
     });
     mailOpts = {
