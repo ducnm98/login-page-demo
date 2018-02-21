@@ -7,6 +7,7 @@ router.get('/:name', function(req, res, next) {
 });
 
 router.get('/', function(req, res, next) {
+  console.log(req.user);
   res.render('nextPage', {mess: ''});
 });
 

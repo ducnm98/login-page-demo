@@ -13,16 +13,15 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
 var config = require('config');
-
+var User = require('./config/authentication');
 var app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-// uncomment after placing your favicon in /public
-//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(logger('dev'));
+//app.use(logger('dev'));
+app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(bodyParser.json());
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -30,15 +29,15 @@ app.use(cookieParser());
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(Passport.initialize());
-app.use(Passport.session());
-
 app.use(session({
 	secret: 'mysecret',
 	cookie: {
 		maxAge: 1000*60*60*24 // 24 tiếng
 	}
 }));
+
+app.use(Passport.initialize());
+app.use(Passport.session());
 
 var index = require('./routes/index');
 var users = require('./routes/users');
@@ -68,7 +67,7 @@ app.route('/login/:mess')
 		else res.render('login', {mess: ''})
 	})
 	.post(Passport.authenticate('local', {
-		failureRedirect: '/login/err',
+		failureRedirect: '/login/error',
 		successRedirect: '/nextPage/',
 		failureFlash: true}), (req, res) => {
 			res.redirect('/nextPage', {mess: req.body.username});
@@ -91,7 +90,7 @@ app.use(function(err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.render('error', {message: 'Lỗi đăng nhập'});
 });
 
 function ensureAuthenticated (req, res, next) {
@@ -128,14 +127,14 @@ Passport.use(new LocalStrategy (
 					if (isMatch){
 						userDoc.password=null;
 						userDoc.email=null;
-						let insert = {
+						var insert = {
 							username: userDoc.username,
 							dateLogin: new Date()
 						}
 						mongoose.model('historyLogin').create(insert, function (err, result) {
 							if (err) throw err;
-							return done(null, userDoc);
 						})
+						return done(null, userDoc);
 					}
 					return done(null, false);
 				});
@@ -151,7 +150,7 @@ Passport.serializeUser((user, done) => {
 });
 
 Passport.deserializeUser((name, done) => {
-  mongoose.model('userSchema').findById(name, (err, user) => {
+	User.getUserById(name, (err, user) => {
 		done(err, user);
 	});
 });
