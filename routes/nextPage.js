@@ -7,8 +7,9 @@ router.get('/:name', function(req, res, next) {
 });
 
 router.get('/', function(req, res, next) {
-  console.log(req.user);
-  res.render('nextPage', {mess: ''});
+  if (req.isAuthenticated())
+    res.render('nextPage', {mess: req.user.username});
+  else res.redirect('/');
 });
 
 module.exports = router;

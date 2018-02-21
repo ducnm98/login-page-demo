@@ -57,7 +57,7 @@ app.route('/login')
 		failureRedirect: '/login/error',
 		successRedirect: '/nextPage/',
 		failureFlash: true}), (req, res) => {
-			res.redirect('/nextPage', {mess: req.body.username});
+			res.redirect('/nextPage');
 });
 
 app.route('/login/:mess')
@@ -70,7 +70,7 @@ app.route('/login/:mess')
 		failureRedirect: '/login/error',
 		successRedirect: '/nextPage/',
 		failureFlash: true}), (req, res) => {
-			res.redirect('/nextPage', {mess: req.body.username});
+			res.redirect('/nextPage');
 });
 
 
@@ -146,12 +146,15 @@ Passport.use(new LocalStrategy (
 ));
 
 Passport.serializeUser((user, done) => {
-	done(null, user.id);
+	done(null, user._id);
 });
 
 Passport.deserializeUser((name, done) => {
 	User.getUserById(name, (err, user) => {
-		done(err, user);
+		if (err) throw err;
+		if (user)
+			done(null, user);
+		else done(null, false);
 	});
 });
 

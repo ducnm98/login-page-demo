@@ -10,9 +10,9 @@ var sendEmail = require('./../api/sendEmail');
 /* GET home page. */
 router.get('/', function(req, res, next) {
   if (req.isAuthenticated())
-    res.render('nextPage')
+    res.redirect('/nextPage')
+    //res.render('nextPage', {mess: req.user.username})
   else {
-    console.log(req.isAuthenticated());
     res.render('index', {mess: ''});
   }
 
